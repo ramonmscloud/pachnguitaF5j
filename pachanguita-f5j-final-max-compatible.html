@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pachanguita de Veleros Eléctricos F5J</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Ajustes para móviles */
+        @media (max-width: 640px) {
+            .table-responsive {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+            }
+            input[type="number"] {
+                width: 3rem !important;
+            }
+        }
+        
+        /* Ajustes para pantallas táctiles */
+        button, input, select {
+            min-height: 44px;
+        }
+        
+        /* Animaciones y estilos adicionales */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .vuelo-bloqueado {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="max-w-6xl mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4 text-center">Pachanguita de Veleros Eléctricos F5J</h1>
+        
+        <!-- Barra de herramientas -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex flex-wrap gap-2">
+                <button id="btnGuardar" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Guardar Competición
+                </button>
+                
+                <button id="btnCargar" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Cargar Competición
+                </button>
+                
+                <input id="inputArchivo" type="file" accept=".json" style="display: none;">
+            </div>
+            
+            <div class="flex items-center">
+                <label class="mr-2">Nombre del archivo:</label>
+                <input
+                    id="nombreArchivo"
+                    type="text"
+                    value="pachanguita-f5j"
+                    class="p-2 border rounded"
+                    placeholder="Nombre del archivo"
+                >
+            </div>
+        </div>
+        
+        <!-- Mensajes de notificación -->
+        <div id="mensaje" class="hidden p-3 mb-4 rounded text-center"></div>
+        
+        <div id="contenidoPrincipal">
+            <!-- Sección de participantes -->
+            <div class="mb-8 p-4 bg-gray-100 rounded-lg">
+                <h2 class="text-xl font-semibold mb-4">Participantes (<span id="contadorParticipantes">0</span>/15)</h2>
+                
+                <div class="flex mb-4">
+                    <input
+                        id="inputNombre"
+                        type="text"
+                        placeholder="Nombre del participante"
+                        class="flex-grow p-2 border rounded"
+                    >
+                    <button 
+                        id="btnAgregar"
+                        class="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                        Añadir
+                    </button>
+                </div>
+                
+                <ul id="listaParticipantes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <!-- Los participantes se añadirán aquí -->
+                </ul>
+            </div>
+            
+            <!-- Sección de vuelos -->
+            <div class="mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <h2 class="text-xl font-semibold">Vuelos (<span id="contadorVuelos">0</span>/15)</h2>
+                    <div class="flex gap-2">
+                        <button 
+                            id="btnIniciarVuelo"
+                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
+                        >
+                            Iniciar Vuelo
+                        </button>
+                        
+                        <button 
+                            id="btnGuardarProgreso"
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 hidden"
+                        >
+                            Guardar Progreso
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="listaVuelos">
+                    <!-- Los vuelos se añadirán aquí -->
+                </div>
+                
+                <div id="contenedorCalcular" class="text-center hidden">
+                    <button 
+                        id="btnCalcular"
+                        class="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700"
+                    >
+                        Calcular Clasificación Final
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resultados finales -->
+        <div id="resultadosFinales" class="p-4 bg-gray-100 rounded-lg hidden">
+            <h2 class="text-xl font-semibold mb-4 text-center">Clasificación Final</h2>
+            
+            <div class="overflow-x-auto table-responsive">
+                <table id="tablaResultados" class="min-w-full bg-white rounded-lg overflow-hidden">
+                    <thead>
+                        <tr class="bg-purple-600 text-white">
+                            <th class="p-3 text-left">Pos</th>
+                            <th class="p-3 text-left">Participante</th>
+                            <th class="p-3 text-center">Total</th>
+                            <th class="p-3 text-center">P. Reales</th>
+                            <!-- Los encabezados de vuelos se añadirán aquí -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los resultados se añadirán aquí -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 flex justify-center gap-4">
+                <button 
+                    id="btnVolver"
+                    class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                    Volver a la Competición
+                </button>
+                
+                <button 
+                    id="btnGuardarResultados"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    Guardar Resultados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado global de la aplicación
+        var estado = {
+            participantes: [],
+            vuelos: [],
+            vueloActual: 1,
+            resultados: [],
+            vueloDesbloqueado: null
+        };
+
+        // Cuando se carga la página
+        window.onload = function() {
+            // Referencias a elementos DOM
+            var nombreArchivo = document.getElementById('nombreArchivo');
+            var btnGuardar = document.getElementById('btnGuardar');
+            var btnCargar = document.getElementById('btnCargar');
+            var inputArchivo = document.getElementById('inputArchivo');
+            var mensaje = document.getElementById('mensaje');
+            var inputNombre = document.getElementById('inputNombre');
+            var btnAgregar = document.getElementById('btnAgregar');
+            var listaParticipantes = document.getElementById('listaParticipantes');
+            var contadorParticipantes = document.getElementById('contadorParticipantes');
+            var btnIniciarVuelo = document.getElementById('btnIniciarVuelo');
+            var listaVuelos = document.getElementById('listaVuelos');
+            var contadorVuelos = document.getElementById('contadorVuelos');
+            var btnGuardarProgreso = document.getElementById('btnGuardarProgreso');
+            var contenedorCalcular = document.getElementById('contenedorCalcular');
+            var btnCalcular = document.getElementById('btnCalcular');
+            var resultadosFinales = document.getElementById('resultadosFinales');
+            var tablaResultados = document.getElementById('tablaResultados');
+            var btnVolver = document.getElementById('btnVolver');
+            var btnGuardarResultados = document.getElementById('btnGuardarResultados');
+            var contenidoPrincipal = document.getElementById('contenidoPrincipal');
+            
+            // === FUNCIONES DE PARTICIPANTES ===
+            
+            // Agregar nuevo participante
+            function agregarParticipante() {
+                var nombre = inputNombre.value.trim();
+                if (nombre && estado.participantes.length < 15) {
+                    estado.participantes.push({
+                        id: Date.now(),
+                        nombre: nombre
+                    });
+                    
+                    inputNombre.value = '';
+                    renderizarParticipantes();
+                    actualizarEstadoBotones();
+                }
+            }
+            
+            // Eliminar participante
+            function eliminarParticipante(id) {
+                estado.participantes = estado.participantes.filter(function(p) {
+                    return p.id !== id;
+                });
+                renderizarParticipantes();
+                actualizarEstadoBotones();
+            }
+            
+            // Renderizar lista de participantes
+            function renderizarParticipantes() {
+                listaParticipantes.innerHTML = '';
+                contadorParticipantes.textContent = estado.participantes.length;
+                
+                estado.participantes.forEach(function(p) {
+                    var li = document.createElement('li');
+                    li.className = 'flex justify-between items-center p-2 bg-white rounded border';
+                    li.innerHTML = '<span>' + p.nombre + '</span>' +
+                        '<button class="text-red-500 hover:text-red-700" data-id="' + p.id + '">✕</button>';
+                    
+                    var btnEliminar = li.querySelector('button');
+                    btnEliminar.addEventListener('click', function() {
+                        eliminarParticipante(parseInt(this.getAttribute('data-id')));
+                    });
+                    
+                    listaParticipantes.appendChild(li);
+                });
+            }
+            
+            // === FUNCIONES DE VUELOS ===
+            
+            // Iniciar nuevo vuelo
+            function iniciarVuelo() {
+                if (estado.vuelos.length < 15 && estado.participantes.length > 0) {
+                    var resultados = [];
+                    estado.participantes.forEach(function(p) {
+                        resultados.push({
+                            participanteId: p.id,
+                            tiempo: 0,
+                            distancia: 0,
+                            puntuacionReal: 0,
+                            puntuacionRelativa: 0
+                        });
+                    });
+                    
+                    var nuevoVuelo = {
+                        numero: estado.vueloActual,
+                        resultados: resultados,
+                        bloqueado: false
+                    };
+                    
+                    // Bloquear todos los vuelos anteriores
+                    estado.vuelos.forEach(function(v) {
+                        v.bloqueado = true;
+                    });
+                    
+                    estado.vuelos.push(nuevoVuelo);
+                    estado.vueloActual++;
+                    estado.vueloDesbloqueado = estado.vuelos.length - 1;
+                    
+                    renderizarVuelos();
+                    actualizarEstadoBotones();
+                    mostrarMensaje('Vuelo iniciado correctamente', 'exito');
+                }
+            }
+            
+            // Calcular bonificación por distancia
+            function calcularBonificacionDistancia(distancia) {
+                if (distancia <= 3) return 25;
+                if (distancia <= 6) return 20;
+                if (distancia <= 9) return 15;
+                if (distancia <= 12) return 10;
+                if (distancia <= 15) return 5;
+                return 0;
+            }
+            
+            // Actualizar resultado de participante en vuelo
+            function actualizarResultado(vueloIndex, resultadoIndex, campo, valor) {
+                if (estado.vuelos[vueloIndex].bloqueado) {
+                    mostrarMensaje('Este vuelo está bloqueado. Desbloquéalo primero para editarlo.', 'error');
+                    return;
+                }
+                
+                // Actualizar el valor
+                estado.vuelos[vueloIndex].resultados[resultadoIndex][campo] = valor;
+                
+                // Calcular puntuación real
+                var resultado = estado.vuelos[vueloIndex].resultados[resultadoIndex];
+                var tiempoSegundos = Math.min(resultado.tiempo, 600); // máximo 10 minutos
+                var bonificacion = calcularBonificacionDistancia(resultado.distancia);
+                resultado.puntuacionReal = tiempoSegundos + bonificacion;
+                
+                // Recalcular puntuaciones relativas
+                calcularPuntuacionesRelativas();
+                
+                // Actualizar la vista
+                actualizarVistaPuntuaciones(vueloIndex);
+            }
+            
+            // Cambiar estado de bloqueo de un vuelo
+            function toggleBloqueoVuelo(vueloIndex) {
+                // Si estamos desbloqueando un vuelo
+                if (estado.vuelos[vueloIndex].bloqueado) {
+                    // Bloquear todos los vuelos
+                    estado.vuelos.forEach(function(v) {
+                        v.bloqueado = true;
+                    });
+                    
+                    // Desbloquear solo el seleccionado
+                    estado.vuelos[vueloIndex].bloqueado = false;
+                    estado.vueloDesbloqueado = vueloIndex;
+                } 
+                // Si estamos bloqueando el vuelo actualmente desbloqueado
+                else {
+                    estado.vuelos[vueloIndex].bloqueado = true;
+                    estado.vueloDesbloqueado = null;
+                }
+                
+                renderizarVuelos();
+            }
+            
+            // Calcular puntuaciones relativas para todos los vuelos
+            function calcularPuntuacionesRelativas() {
+                estado.vuelos.forEach(function(vuelo) {
+                    // Encontrar puntuación máxima en el vuelo
+                    var maxPuntuacion = 0;
+                    vuelo.resultados.forEach(function(r) {
+                        if (r.puntuacionReal > maxPuntuacion) {
+                            maxPuntuacion = r.puntuacionReal;
+                        }
+                    });
+                    
+                    // Calcular puntuación relativa para cada participante
+                    vuelo.resultados.forEach(function(resultado) {
+                        resultado.puntuacionRelativa = maxPuntuacion > 0 
+                            ? Math.round((1000 * resultado.puntuacionReal) / maxPuntuacion) 
+                            : 0;
+                    });
+                });
+            }
+            
+            // Actualizar vista de puntuaciones para un vuelo específico
+            function actualizarVistaPuntuaciones(vueloIndex) {
+                var vueloDiv = document.getElementById('vuelo-' + vueloIndex);
+                if (!vueloDiv) return;
+                
+                var vuelo = estado.vuelos[vueloIndex];
+                
+                // Actualizar todas las celdas de puntuación
+                vuelo.resultados.forEach(function(resultado, resultadoIndex) {
+                    var puntosRealesCell = vueloDiv.querySelector('#puntos-reales-' + vueloIndex + '-' + resultadoIndex);
+                    var puntosRelativosCell = vueloDiv.querySelector('#puntos-relativos-' + vueloIndex + '-' + resultadoIndex);
+                    var bonificacionCell = vueloDiv.querySelector('#bonificacion-' + vueloIndex + '-' + resultadoIndex);
+                    
+                    if (puntosRealesCell) {
+                        puntosRealesCell.textContent = resultado.puntuacionReal;
+                    }
+                    
+                    if (puntosRelativosCell) {
+                        puntosRelativosCell.textContent = resultado.puntuacionRelativa;
+                    }
+                    
+                    if (bonificacionCell) {
+                        bonificacionCell.textContent = calcularBonificacionDistancia(resultado.distancia);
+                    }
+                });
+            }
+            
+            // Manejar cambios en inputs
+            function manejarCambioInput(e) {
+                var target = e.target;
+                var vueloIndex = parseInt(target.getAttribute('data-vuelo-index'));
+                var resultadoIndex = parseInt(target.getAttribute('data-resultado-index'));
+                var tipo = target.getAttribute('data-tipo');
+                
+                if (tipo === 'minutos') {
+                    var min = parseInt(target.value) || 0;
+                    var seg = estado.vuelos[vueloIndex].resultados[resultadoIndex].tiempo % 60;
+                    actualizarResultado(vueloIndex, resultadoIndex, 'tiempo', (min * 60) + seg);
+                } else if (tipo === 'segundos') {
+                    var seg = parseInt(target.value) || 0;
+                    var min = Math.floor(estado.vuelos[vueloIndex].resultados[resultadoIndex].tiempo / 60);
+                    actualizarResultado(vueloIndex, resultadoIndex, 'tiempo', (min * 60) + seg);
+                } else if (tipo === 'distancia') {
+                    var distancia = parseFloat(target.value) || 0;
+                    actualizarResultado(vueloIndex, resultadoIndex, 'distancia', distancia);
+                }
+            }
+            
+            // Renderizar vuelos
+            function renderizarVuelos() {
+                listaVuelos.innerHTML = '';
+                contadorVuelos.textContent = estado.vuelos.length;
+                
+                estado.vuelos.forEach(function(vuelo, vueloIndex) {
+                    var vueloDiv = document.createElement('div');
+                    vueloDiv.id = 'vuelo-' + vueloIndex;
+                    vueloDiv.className = 'mb-6 p-4 bg-gray-100 rounded-lg';
+                    
+                    var vueloHTML = '<div class="flex justify-between items-center mb-3">' +
+                        '<h3 class="text-lg font-medium">Vuelo ' + vuelo.numero + '</h3>' +
+                        '<button class="px-3 py-1 rounded text-white ' + 
+                        (vuelo.bloqueado ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600') + 
+                        '" data-vuelo-index="' + vueloIndex + '">' +
+                        (vuelo.bloqueado ? 'Desbloquear' : 'Bloquear') +
+                        '</button>' +
+                        '</div>' +
+                        '<div class="overflow-x-auto table-responsive ' + (vuelo.bloqueado ? 'vuelo-bloqueado' : '') + '">' +
+                        '<table class="min-w-full bg-white">' +
+                        '<thead>' +
+                        '<tr class="bg-gray-200">' +
+                        '<th class="p-2 text-left">Participante</th>' +
+                        '<th class="p-2 text-center">Tiempo (min:seg)</th>' +
+                        '<th class="p-2 text-center">Distancia (m)</th>' +
+                        '<th class="p-2 text-center">Bonificación</th>' +
+                        '<th class="p-2 text-center">Puntos Reales</th>' +
+                        '<th class="p-2 text-center">Puntos Relativos</th>' +
+                        '</tr>' +
+                        '</thead>' +
+                        '<tbody>';
+                    
+                    vuelo.resultados.forEach(function(resultado, resultadoIndex) {
+                        var participante = estado.participantes.find(function(p) {
+                            return p.id === resultado.participanteId;
+                        });
+                        
+                        if (!participante) return;
+                        
+                        var minutos = Math.floor(resultado.tiempo / 60);
+                        var segundos = resultado.tiempo % 60;
+                        var bonificacion = calcularBonificacionDistancia(resultado.distancia);
+                        
+                        vueloHTML += '<tr class="border-b">' +
+                            '<td class="p-2">' + participante.nombre + '</td>' +
+                            '<td class="p-2">' +
+                            '<div class="flex items-center justify-center">' +
+                            '<input type="number" min="0" max="10" value="' + minutos + '" ' +
+                            'class="w-16 p-1 text-center border rounded" ' +
+                            (vuelo.bloqueado ? 'disabled' : '') +
+                            ' data-tipo="minutos" data-vuelo-index="' + vueloIndex + '" ' +
+                            'data-resultado-index="' + resultadoIndex + '">' +
+                            ':' +
+                            '<input type="number" min="0" max="59" value="' + segundos + '" ' +
+                            'class="w-16 p-1 text-center border rounded" ' +
+                            (vuelo.bloqueado ? 'disabled' : '') +
+                            ' data-tipo="segundos" data-vuelo-index="' + vueloIndex + '" ' +
+                            'data-resultado-index="' + resultadoIndex + '">' +
+                            '</div>' +
+                            '</td>' +
+                            '<td class="p-2">' +
+                            '<input type="number" min="0" value="' + resultado.distancia + '" ' +
+                            'class="w-20 p-1 text-center border rounded" ' +
+                            (vuelo.bloqueado ? 'disabled' : '') +
+                            ' data-tipo="distancia" data-vuelo-index="' + vueloIndex + '" ' +
+                            'data-resultado-index="' + resultadoIndex + '">' +
+                            '</td>' +
+                            '<td id="bonificacion-' + vueloIndex + '-' + resultadoIndex + '" class="p-2 text-center">' + 
+                            bonificacion + '</td>' +
+                            '<td id="puntos-reales-' + vueloIndex + '-' + resultadoIndex + '" class="p-2 text-center">' + 
+                            resultado.puntuacionReal + '</td>' +
+                            '<td id="puntos-relativos-' + vueloIndex + '-' + resultadoIndex + '" class="p-2 text-center">' + 
+                            resultado.puntuacionRelativa + '</td>' +
+                            '</tr>';
+                    });
+                    
+                    vueloHTML += '</tbody></table></div>';
+                    
+                    vueloDiv.innerHTML = vueloHTML;
+                    
+                    // Añadir eventos
+                    var btnBloqueo = vueloDiv.querySelector('button[data-vuelo-index]');
+                    btnBloqueo.addEventListener('click', function() {
+                        toggleBloqueoVuelo(parseInt(this.getAttribute('data-vuelo-index')));
+                    });
+                    
+                    // Añadir eventos para inputs
+                    var inputs = vueloDiv.querySelectorAll('input[data-tipo]');
+                    inputs.forEach(function(input) {
+                        input.addEventListener('change', manejarCambioInput);
+                    });
+                    
+                    listaVuelos.appendChild(vueloDiv);
+                });
+            }
+            
+            // === FUNCIONES DE CLASIFICACIÓN ===
+            
+            // Calcular clasificación final
+            function calcularClasificacion() {
+                // Inicializar total de puntos para cada participante
+                var puntosAcumulados = [];
+                
+                estado.participantes.forEach(function(p) {
+                    puntosAcumulados.push({
+                        participanteId: p.id,
+                        nombre: p.nombre,
+                        puntosTotales: 0,
+                        puntosReales: 0,
+                        vuelosDetalle: []
+                    });
+                });
+                
+                // Sumar puntos de todos los vuelos
+                estado.vuelos.forEach(function(vuelo) {
+                    // Para cada participante, añadir detalle de este vuelo
+                    puntosAcumulados.forEach(function(participante) {
+                        var resultadoVuelo = vuelo.resultados.find(function(r) {
+                            return r.participanteId === participante.participanteId;
+                        });
+                        
+                        if (resultadoVuelo) {
+                            participante.puntosTotales += resultadoVuelo.puntuacionRelativa;
+                            participante.puntosReales += resultadoVuelo.puntuacionReal;
+                            participante.vuelosDetalle.push({
+                                numeroVuelo: vuelo.numero,
+                                puntuacionRelativa: resultadoVuelo.puntuacionRelativa,
+                                puntuacionReal: resultadoVuelo.puntuacionReal
+                            });
+                        } else {
+                            participante.vuelosDetalle.push({
+                                numeroVuelo: vuelo.numero,
+                                puntuacionRelativa: 0,
+                                puntuacionReal: 0
+                            });
+                        }
+                    });
+                });
+                
+                // Ordenar por puntos totales y desempatar por puntos reales
+                puntosAcumulados.sort(function(a, b) {
+                    if (a.puntosTotales === b.puntosTotales) {
+                        return b.puntosReales - a.puntosReales;
+                    }
+                    return b.puntosTotales - a.puntosTotales;
+                });
+                
+                estado.resultados = puntosAcumulados;
+                mostrarResultadosFinales();
+            }
+            
+            // Mostrar resultados finales
+            function mostrarResultadosFinales() {
+                // Preparar tabla de resultados
+                var thead = tablaResultados.querySelector('thead tr');
+                thead.innerHTML = '<th class="p-3 text-left">Pos</th>' +
+                    '<th class="p-3 text-left">Participante</th>' +
+                    '<th class="p-3 text-center">Total</th>' +
+                    '<th class="p-3 text-center">P. Reales</th>';
+                
+                // Agregar encabezados para cada vuelo
+                estado.vuelos.forEach(function(vuelo) {
+                    var th = document.createElement('th');
+                    th.className = 'p-3 text-center';
+                    th.textContent = 'Vuelo ' + vuelo.numero;
+                    thead.appendChild(th);
+                });
+                
+                // Añadir filas de resultados
+                var tbody = tablaResultados.querySelector('tbody');
+                tbody.innerHTML = '';
+                
+                estado.resultados.forEach(function(resultado, index) {
+                    var tr = document.createElement('tr');
+                    tr.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                    
+                    var filaHTML = '<td class="p-3 font-medium">' + (index + 1) + '</td>' +
+                        '<td class="p-3">' + resultado.nombre + '</td>' +
+                        '<td class="p-3 text-center font-bold">' + Math.round(resultado.puntosTotales) + '</td>' +
+                        '<td class="p-3 text-center">' + resultado.puntosReales + '</td>';
+                    
+                    resultado.vuelosDetalle.forEach(function(vuelo) {
+                        filaHTML += '<td class="p-3 text-center">' + Math.round(vuelo.puntuacionRelativa) + '</td>';
+                    });
+                    
+                    tr.innerHTML = filaHTML;
+                    tbody.appendChild(tr);
+                });
+                
+                // Mostrar sección de resultados y ocultar contenido principal
+                resultadosFinales.classList.remove('hidden');
+                contenidoPrincipal.classList.add('hidden');
+            }
+            
+            // Volver a la competición
+            function volverACompeticion() {
+                resultadosFinales.classList.add('hidden');
+                contenidoPrincipal.classList.remove('hidden');
+            }
+            
+            // === FUNCIONES DE ARCHIVO ===
+            
+            // Guardar datos en archivo JSON
+            function guardarDatos() {
+                try {
+                    var datos = {
+                        participantes: estado.participantes,
+                        vuelos: estado.vuelos,
+                        vueloActual: estado.vueloActual,
+                        resultados: estado.resultados,
+                        vueloDesbloqueado: estado.vueloDesbloqueado,
+                        fecha: new Date().toISOString()
+                    };
+                    
+                    var contenido = JSON.stringify(datos, null, 2);
+                    var blob = new Blob([contenido], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = (nombreArchivo.value || 'pachanguita-f5j') + '.json';
+                    a.click();
+                    
+                    URL.revokeObjectURL(url);
+                    mostrarMensaje('Datos guardados correctamente', 'exito');
+                } catch (error) {
+                    mostrarMensaje('Error al guardar los datos: ' + error.message, 'error');
+                }
+            }
+            
+            // Cargar datos desde archivo JSON
+            function cargarDatos(event) {
+                var archivo = event.target.files[0];
+                if (!archivo) return;
+                
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        var contenido = e.target.result;
+                        var datos = JSON.parse(contenido);
+                        
+                        // Validar estructura mínima del archivo
+                        if (!datos.participantes || !datos.vuelos) {
+                            throw new Error('El archivo no contiene datos válidos de competición');
+                        }
+                        
+                        // Cargar datos
+                        estado.participantes = datos.participantes;
+                        estado.vuelos = datos.vuelos;
+                        estado.vueloActual = datos.vueloActual || datos.vuelos.length + 1;
+                        estado.resultados = datos.resultados || [];
+                        
+                        // Asegurar estado de bloqueo correcto
+                        if (datos.vueloDesbloqueado !== undefined) {
+                            estado.vueloDesbloqueado = datos.vueloDesbloqueado;
+                        } else {
+                            var indiceDesbloqueado = -1;
+                            for (var i = 0; i < datos.vuelos.length; i++) {
+                                if (!datos.vuelos[i].bloqueado) {
+                                    indiceDesbloqueado = i;
+                                    break;
+                                }
+                            }
+                            estado.vueloDesbloqueado = indiceDesbloqueado >= 0 ? indiceDesbloqueado : null;
+                        }
+                        
+                        // Actualizar UI
+                        renderizarParticipantes();
+                        renderizarVuelos();
+                        actualizarEstadoBotones();
+                        
+                        // Ocultar resultados si estaban visibles
+                        resultadosFinales.classList.add('hidden');
+                        contenidoPrincipal.classList.remove('hidden');
+                        
+                        mostrarMensaje('Datos cargados correctamente', 'exito');
+                    } catch (error) {
+                        mostrarMensaje('Error al leer el archivo: ' + error.message, 'error');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    mostrarMensaje('Error al leer el archivo', 'error');
+                };
+                
+                reader.readAsText(archivo);
+                
+                // Limpiar el input para permitir cargar el mismo archivo nuevamente
+                event.target.value = '';
+            }
+            
+            // === FUNCIONES DE UTILIDAD ===
+            
+            // Mostrar mensaje temporal
+            function mostrarMensaje(texto, tipo) {
+                mensaje.textContent = texto;
+                mensaje.className = tipo === 'exito' 
+                    ? 'p-3 mb-4 rounded text-center bg-green-100 text-green-800 fade-in' 
+                    : 'p-3 mb-4 rounded text-center bg-red-100 text-red-800 fade-in';
+                mensaje.classList.remove('hidden');
+                
+                setTimeout(function() {
+                    mensaje.classList.add('hidden');
+                }, 3000);
+            }
+            
+            // Actualizar estado de botones según condiciones actuales
+            function actualizarEstadoBotones() {
+                // Botón de agregar participante
+                btnAgregar.disabled = estado.participantes.length >= 15;
+                btnAgregar.className = estado.participantes.length >= 15
+                    ? 'ml-2 px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed'
+                    : 'ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600';
+                
+                // Botón de iniciar vuelo
+                btnIniciarVuelo.disabled = estado.participantes.length === 0 || estado.vuelos.length >= 15;
+                btnIniciarVuelo.className = estado.participantes.length === 0 || estado.vuelos.length >= 15
+                    ? 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed'
+                    : 'px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600';
+                
+                // Botón de guardar progreso
+                if (estado.vuelos.length > 0) {
+                    btnGuardarProgreso.classList.remove('hidden');
+                } else {
+                    btnGuardarProgreso.classList.add('hidden');
+                }
+                
+                // Botón de calcular clasificación
+                if (estado.vuelos.length > 0) {
+                    contenedorCalcular.classList.remove('hidden');
+                } else {
+                    contenedorCalcular.classList.add('hidden');
+                }
+            }
+            
+            // Inicializar eventos
+            btnAgregar.addEventListener('click', agregarParticipante);
+            inputNombre.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    agregarParticipante();
+                }
+            });
+            
+            btnIniciarVuelo.addEventListener('click', iniciarVuelo);
+            
+            btnGuardar.addEventListener('click', guardarDatos);
+            btnCargar.addEventListener('click', function() {
+                inputArchivo.click();
+            });
+            inputArchivo.addEventListener('change', cargarDatos);
+            btnGuardarProgreso.addEventListener('click', guardarDatos);
+            
+            btnCalcular.addEventListener('click', calcularClasificacion);
+            btnVolver.addEventListener('click', volverACompeticion);
+            btnGuardarResultados.addEventListener('click', guardarDatos);
+            
+            // Inicializar estado de botones
+            actualizarEstadoBotones();
+        };
+    </script>
+</body>
+</html>
